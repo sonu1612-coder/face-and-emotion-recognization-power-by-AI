@@ -1,0 +1,18 @@
+# Virtual environments
+venv/
+env/
+
+# CRITICAL: Secret API Keys must NEVER be uploaded
+.env
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Local Data (Specific to your machine)
+faces_dataset.db
+dataset/
+
+# OS files
+.DS_Store
+Thumbs.db

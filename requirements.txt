@@ -1,0 +1,10 @@
+opencv-contrib-python
+tensorflow[and-cuda]==2.16.1
+flask
+Pillow
+numpy<2.0.0
+google-generativeai
+python-dotenv
+protobuf==4.25.9
+grpcio==1.62.1
+grpcio-status==1.62.1

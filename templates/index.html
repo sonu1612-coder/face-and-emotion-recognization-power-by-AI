@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Face & Emotion Recognition Dashboard</title>
+    <!-- Google Fonts for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- 3D Background Canvas for Dashboard -->
+    <div id="dashboard-canvas"></div>
+
+    <div class="dashboard-container">
+        
+        <!-- Sidebar Control Panel -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-microchip icon-accent"></i> CoreAI</h2>
+                <p>Recognition Engine</p>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fa-solid fa-bars"></i> Modules</h3>
+                <button class="btn btn-nav active" data-tab="tab-recognize">Live Detector</button>
+                <button class="btn btn-nav" data-tab="tab-capture">Data Collection</button>
+                <button class="btn btn-nav" data-tab="tab-database">DB Gallery</button>
+            </div>
+
+            <div class="control-group">
+                <h3><i class="fa-solid fa-video"></i> Camera Settings</h3>
+                <label for="cameraSelect">Select Webcam ID</label>
+                <select id="cameraSelect">
+                    <option value="0">Built-in Webcam (0)</option>
+                    <option value="1">External / USB (1)</option>
+                    <option value="2">Virtual Camera (2)</option>
+                </select>
+                <button id="btnStreamToggle" class="btn btn-primary" style="width:100%; margin-top:15px; border-color: rgba(234,46,51,0.5);"><i class="fa-solid fa-video-slash" style="color:#ea2e33;"></i> <span id="streamToggleText">Turn Camera Off</span></button>
+            </div>
+            
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="topbar">
+                <h1 id="topbarTitle">Live Inference Hub</h1>
+                <div class="user-profile">
+                    <div class="pulse-ring"></div>
+                    <span class="user-status">Live</span>
+                </div>
+            </header>
+            
+            <!-- Tab 1: Live Recognition & AI Assistant -->
+            <section id="tab-recognize" class="tab-pane active glass-panel">
+                <div class="recognize-layout">
+                    <div class="video-section">
+                        <div class="video-container">
+                            <div class="video-wrapper" id="recognizeVideoWrapper">
+                                <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Live Camera Feed">
+                            </div>
+                        </div>
+                        <div class="action-panel">
+                            <button id="btnRecognize" class="btn btn-xl primary-glow"><i class="fa-solid fa-brain"></i> Recognize Face Now</button>
+                            <div id="recognitionResult" class="result-card hidden">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: AI Psychological Assistant -->
+                    <div class="chat-section">
+                        <div class="chat-header">
+                            <h3><i class="fa-solid fa-user-doctor icon-accent"></i> Dr. CoreAI</h3>
+                            <span class="pulse-ring-small"></span>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="message ai-message">
+                                <div class="msg-bubble">Hello! I am Dr. CoreAI, your emotional and psychological AI assistant. How are you feeling today?</div>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+                            <button id="btnSendChat" class="btn btn-circle primary-glow"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 2: Data Collection -->
+            <section id="tab-capture" class="tab-pane glass-panel hidden">
+                <div class="recognize-layout">
+                    <!-- Left: Video Preview -->
+                    <div class="video-section">
+                        <div class="video-container">
+                            <div class="video-wrapper" id="captureVideoWrapper">
+                                <!-- videoFeed DOM node relocated here via JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Capture Form -->
+                    <div class="chat-section" style="padding: 20px; overflow-y: auto;">
+                        <h2 style="margin-bottom: 10px;">Capture & Train</h2>
+                        <p class="desc" style="margin-bottom: 20px;">Please face the camera. Enter your name and hit capture to train the AI instantly.</p>
+                        
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label>Target Identity Name</label>
+                            <input type="text" id="captureName" placeholder="e.g. John Doe">
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label>Emotion Tag</label>
+                            <select id="captureEmotion">
+                                <option value="Angry">Angry</option>
+                                <option value="Disgust">Disgust</option>
+                                <option value="Fear">Fear</option>
+                                <option value="Happy">Happy</option>
+                                <option value="Neutral" selected>Neutral</option>
+                                <option value="Sad">Sad</option>
+                                <option value="Surprise">Surprise</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label>Number of Images per Burst</label>
+                            <select id="captureShots">
+                                <option value="1">1 Shot Quick Capture</option>
+                                <option value="5" selected>5 Shots Standard Training</option>
+                                <option value="15">15 Shots Deep Training</option>
+                            </select>
+                        </div>
+
+                        <button id="btnCaptureStart" class="btn btn-xl primary-glow" style="width: 100%; min-width: auto;"><i class="fa-solid fa-camera"></i> Start Collection</button>
+                        <div id="captureStatus" class="status-msg" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 3: Database Gallery -->
+            <section id="tab-database" class="tab-pane history-section glass-panel hidden">
+                <div class="history-header">
+                    <h2><i class="fa-solid fa-database"></i> Faces Database Manager</h2>
+                    <div style="display:flex; gap: 10px;">
+                        <button id="btnRefreshLogs" class="btn btn-secondary"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                        <button id="btnWipeDB" class="btn btn-secondary" style="color:#ea2e33; border-color:rgba(234,46,51,0.5);"><i class="fa-solid fa-triangle-exclamation"></i> Wipe All Data</button>
+                    </div>
+                </div>
+                <div class="gallery-container" id="galleryContainer">
+                    <!-- Populated via JS -->
+                    <p class="loading-text text-center">Loading images...</p>
+                </div>
+            </section>
+            
+        </main>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

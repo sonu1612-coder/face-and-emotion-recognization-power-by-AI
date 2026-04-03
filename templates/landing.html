@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORE AI — Neural Recognition Engine</title>
+    <meta name="description" content="CORE AI: Real-time Facial Recognition, Emotion Analytics & Mask Detection powered by MobileNetV2 and LBPH.">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+
+    <!-- Fixed 3D Background -->
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Fixed Particles -->
+    <div id="particle-field"></div>
+
+    <!-- Scanlines & Vignette (fixed overlays) -->
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <!-- Flash overlay for launch transition -->
+    <div id="flash-overlay"></div>
+
+    <!-- Scroll Progress Rail (left side) -->
+    <div class="scroll-rail">
+        <div class="rail-track">
+            <div class="rail-fill" id="railFill"></div>
+        </div>
+        <div class="rail-dots">
+            <div class="rail-dot active" data-section="0" title="Home"></div>
+            <div class="rail-dot" data-section="1" title="Features"></div>
+            <div class="rail-dot" data-section="2" title="Tech"></div>
+            <div class="rail-dot" data-section="3" title="Stats"></div>
+            <div class="rail-dot" data-section="4" title="Launch"></div>
+        </div>
+    </div>
+
+    <!-- TOP NAV (fixed) -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <span class="nav-logo">[ CORE AI ]</span>
+            <span class="nav-status"><span class="status-dot"></span>ONLINE</span>
+        </div>
+        <div class="nav-right">
+            <span class="nav-tag">v2.0</span>
+            <span class="nav-tag">MobileNetV2</span>
+            <span class="nav-tag">LBPH</span>
+            <!-- Music Toggle Button -->
+            <button id="musicBtn" title="Toggle Music" onclick="toggleMusic()" style="
+                background: rgba(0,229,255,0.08);
+                border: 1px solid rgba(0,229,255,0.3);
+                border-radius: 50%;
+                width: 36px; height: 36px;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; color: #00e5ff;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                box-shadow: 0 0 10px rgba(0,229,255,0.15);
+                margin-left: 0.5rem;
+                flex-shrink: 0;
+            " onmouseover="this.style.background='rgba(0,229,255,0.2)';this.style.boxShadow='0 0 20px rgba(0,229,255,0.4)'"
+               onmouseout="this.style.background='rgba(0,229,255,0.08)';this.style.boxShadow='0 0 10px rgba(0,229,255,0.15)'">
+                <i class="fa-solid fa-volume-high" id="musicIcon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Background Audio -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="{{ url_for('static', filename='Precision_at_Daybreak.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Music state
+        let musicPlaying = false;
+        const music = document.getElementById('bgMusic');
+        const icon  = document.getElementById('musicIcon');
+        const btn   = document.getElementById('musicBtn');
+        music.volume = 1.0;
+
+        function toggleMusic() {
+            if (musicPlaying) {
+                // Fade out
+                fadeAudio(music, music.volume, 0, 600, () => {
+                    music.pause();
+                    musicPlaying = false;
+                    icon.className = 'fa-solid fa-volume-xmark';
+                    btn.style.borderColor = 'rgba(255,100,100,0.4)';
+                    btn.style.color = 'rgba(255,100,100,0.8)';
+                    btn.style.boxShadow = '0 0 10px rgba(255,100,100,0.15)';
+                });
+            } else {
+                music.volume = 0;
+                music.play().then(() => {
+                    musicPlaying = true;
+                    icon.className = 'fa-solid fa-volume-high';
+                    btn.style.borderColor = 'rgba(0,229,255,0.3)';
+                    btn.style.color = '#00e5ff';
+                    btn.style.boxShadow = '0 0 10px rgba(0,229,255,0.15)';
+                    // Fade in
+                    fadeAudio(music, 0, 1.0, 800);
+                }).catch(() => {});
+            }
+        }
+
+        function fadeAudio(audio, from, to, duration, callback) {
+            const steps = 30;
+            const stepTime = duration / steps;
+            const stepVol  = (to - from) / steps;
+            let current = from;
+            const timer = setInterval(() => {
+                current += stepVol;
+                audio.volume = Math.max(0, Math.min(1, current));
+                if ((stepVol > 0 && current >= to) || (stepVol < 0 && current <= to)) {
+                    clearInterval(timer);
+                    audio.volume = to;
+                    if (callback) callback();
+                }
+            }, stepTime);
+        }
+
+        // Auto-play on first click anywhere (browser policy)
+        let autoStarted = false;
+        document.addEventListener('click', function autoPlay() {
+            if (!autoStarted && !musicPlaying) {
+                autoStarted = true;
+                music.volume = 0;
+                music.play().then(() => {
+                    musicPlaying = true;
+                    icon.className = 'fa-solid fa-volume-high';
+                    btn.style.borderColor = 'rgba(0,229,255,0.3)';
+                    btn.style.color = '#00e5ff';
+                    fadeAudio(music, 0, 1.0, 1200);
+                }).catch(() => {});
+            }
+        }, { once: true });
+
+        // Set initial icon to muted (not yet playing)
+        icon.className = 'fa-solid fa-volume-xmark';
+        btn.style.borderColor = 'rgba(255,100,100,0.35)';
+        btn.style.color = 'rgba(255,140,140,0.8)';
+    </script>
+
+    <!-- ==========================================
+         SCROLLABLE CONTAINER
+    ========================================== -->
+    <div class="scroll-wrapper" id="scrollWrapper">
+
+        <!-- ====== SECTION 1: HERO ====== -->
+        <section class="snap-section" id="sec-hero">
+            <div class="hero-content">
+                <div class="hero-badge reveal-up">
+                    <i class="fa-solid fa-circle-nodes"></i>
+                    NEURAL RECOGNITION ENGINE
+                </div>
+                <h1 class="hero-title reveal-up delay-1" data-text="CORE AI">CORE AI</h1>
+                <p class="hero-subtitle reveal-up delay-2">
+                    Facial Recognition &nbsp;·&nbsp; Emotion Analytics &nbsp;·&nbsp; Mask Detection
+                </p>
+                <div class="hero-line reveal-up delay-3"></div>
+                <p class="hero-desc reveal-up delay-4">
+                    A real-time AI surveillance engine powered by deep learning — 
+                    identifying faces, emotions, and mask compliance at machine speed.
+                </p>
+                <div class="scroll-hint reveal-up delay-5">
+                    <span>SCROLL TO EXPLORE</span>
+                    <div class="scroll-mouse">
+                        <div class="scroll-wheel"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating corner cards -->
+            <div class="hero-float-cards">
+                <div class="hfc hfc-tl animate-float-1">
+                    <i class="fa-solid fa-mask"></i>
+                    <span>Mask AI</span>
+                </div>
+                <div class="hfc hfc-tr animate-float-2">
+                    <i class="fa-solid fa-face-smile"></i>
+                    <span>Emotion</span>
+                </div>
+                <div class="hfc hfc-bl animate-float-3">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    <span>Biometric</span>
+                </div>
+                <div class="hfc hfc-br animate-float-4">
+                    <i class="fa-solid fa-database"></i>
+                    <span>SecureDB</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== SECTION 2: FEATURES ====== -->
+        <section class="snap-section" id="sec-features">
+            <div class="section-header">
+                <div class="section-label scroll-reveal" data-dir="up">01 / CAPABILITIES</div>
+                <h2 class="section-title scroll-reveal" data-dir="up" data-delay="100">What CORE AI Does</h2>
+                <div class="section-divider scroll-reveal" data-dir="up" data-delay="200"></div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feat-card scroll-reveal" data-dir="left" data-delay="0">
+                    <div class="feat-card-glow glow-cyan"></div>
+                    <div class="feat-card-num">01</div>
+                    <i class="fa-solid fa-mask feat-icon icon-cyan"></i>
+                    <h3>Mask Detection</h3>
+                    <p>Real-time inference using MobileNetV2 architecture to determine mask compliance within milliseconds.</p>
+                    <div class="feat-bar"><div class="feat-bar-fill" style="--w:95%"></div></div>
+                    <span class="feat-acc">95% precision</span>
+                </div>
+
+                <div class="feat-card scroll-reveal" data-dir="up" data-delay="150">
+                    <div class="feat-card-glow glow-purple"></div>
+                    <div class="feat-card-num">02</div>
+                    <i class="fa-solid fa-face-smile feat-icon icon-purple"></i>
+                    <h3>Emotion Analytics</h3>
+                    <p>Categorical state analysis classifying human micro-expressions into 7 unique emotional states.</p>
+                    <div class="feat-bar"><div class="feat-bar-fill" style="--w:88%"></div></div>
+                    <span class="feat-acc">88% accuracy</span>
+                </div>
+
+                <div class="feat-card scroll-reveal" data-dir="right" data-delay="300">
+                    <div class="feat-card-glow glow-cyan"></div>
+                    <div class="feat-card-num">03</div>
+                    <i class="fa-solid fa-fingerprint feat-icon icon-cyan"></i>
+                    <h3>Identity Biometrics</h3>
+                    <p>Live LBPH facial mapping allowing instantaneous person identification against a secured SQL database.</p>
+                    <div class="feat-bar"><div class="feat-bar-fill" style="--w:98%"></div></div>
+                    <span class="feat-acc">98.7% recognition</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== SECTION 3: TECH / MISSION PACKET ====== -->
+        <section class="snap-section" id="sec-tech">
+            <div class="tech-layout">
+                <!-- Left: animated circuit lines -->
+                <div class="tech-visual scroll-reveal" data-dir="left" data-delay="0">
+                    <div class="tech-ring ring-1"></div>
+                    <div class="tech-ring ring-2"></div>
+                    <div class="tech-ring ring-3"></div>
+                    <div class="tech-core">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <div class="tech-orbit-dot dot-orbit-1"></div>
+                    <div class="tech-orbit-dot dot-orbit-2"></div>
+                    <div class="tech-orbit-dot dot-orbit-3"></div>
+                </div>
+
+                <!-- Right: mission packet -->
+                <div class="mission-card scroll-reveal" data-dir="right" data-delay="200">
+                    <div class="packet-header">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        MISSION PACKET
+                    </div>
+                    <div class="packet-body">
+                        <div class="data-row"><span class="dkey">Project</span><span class="dval">CORE AI</span></div>
+                        <div class="data-row"><span class="dkey">Version</span><span class="dval">2.0</span></div>
+                        <div class="data-row"><span class="dkey">Team</span><span class="dval">Daksh · Aayush · Athrva · Zaid</span></div>
+                        <div class="data-row"><span class="dkey">Stack</span><span class="dval">Python · OpenCV · Flask</span></div>
+                        <div class="data-row"><span class="dkey">Models</span><span class="dval">MobileNetV2 · LBPH</span></div>
+                        <div class="data-row"><span class="dkey">Database</span><span class="dval">Secured SQL</span></div>
+                        <div class="data-row">
+                            <span class="dkey">Status</span>
+                            <span class="dval-status">● ONLINE</span>
+                        </div>
+                    </div>
+                    <div class="packet-footer">CLASSIFIED — INTERNAL USE ONLY</div>
+                </div>
+            </div>
+
+            <div class="section-label-corner scroll-reveal" data-dir="up" data-delay="400">02 / TECH STACK</div>
+        </section>
+
+        <!-- ====== SECTION 4: STATS ====== -->
+        <section class="snap-section" id="sec-stats">
+            <div class="section-header">
+                <div class="section-label scroll-reveal" data-dir="up">03 / PERFORMANCE</div>
+                <h2 class="section-title scroll-reveal" data-dir="up" data-delay="100">By The Numbers</h2>
+                <div class="section-divider scroll-reveal" data-dir="up" data-delay="200"></div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card scroll-reveal" data-dir="up" data-delay="0">
+                    <div class="stat-icon"><i class="fa-solid fa-bullseye"></i></div>
+                    <div class="stat-count" data-target="98.7" data-suffix="%">0</div>
+                    <div class="stat-label">Model Accuracy</div>
+                    <div class="stat-prog"><div class="stat-prog-fill" style="--pw:98.7%"></div></div>
+                </div>
+                <div class="stat-card scroll-reveal" data-dir="up" data-delay="100">
+                    <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="stat-count" data-target="5" data-suffix="ms">0</div>
+                    <div class="stat-label">Inference Speed</div>
+                    <div class="stat-prog"><div class="stat-prog-fill" style="--pw:99%"></div></div>
+                </div>
+                <div class="stat-card scroll-reveal" data-dir="up" data-delay="200">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="stat-count" data-target="7" data-suffix="">0</div>
+                    <div class="stat-label">Emotion Classes</div>
+                    <div class="stat-prog"><div class="stat-prog-fill" style="--pw:70%"></div></div>
+                </div>
+                <div class="stat-card scroll-reveal" data-dir="up" data-delay="300">
+                    <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+                    <div class="stat-count" data-target="3" data-suffix="">0</div>
+                    <div class="stat-label">AI Models</div>
+                    <div class="stat-prog"><div class="stat-prog-fill" style="--pw:100%"></div></div>
+                </div>
+            </div>
+
+            <!-- Tech Tags -->
+            <div class="tech-tags scroll-reveal" data-dir="up" data-delay="400">
+                <span class="tech-tag">Python</span>
+                <span class="tech-tag">OpenCV</span>
+                <span class="tech-tag">TensorFlow</span>
+                <span class="tech-tag">MobileNetV2</span>
+                <span class="tech-tag">LBPH</span>
+                <span class="tech-tag">Flask</span>
+                <span class="tech-tag">SQLite</span>
+                <span class="tech-tag">Three.js</span>
+            </div>
+        </section>
+
+        <!-- ====== SECTION 5: LAUNCH ====== -->
+        <section class="snap-section" id="sec-launch">
+            <div class="launch-content">
+                <div class="launch-label scroll-reveal" data-dir="up">04 / INITIALIZE</div>
+                <h2 class="launch-title scroll-reveal" data-dir="up" data-delay="100">
+                    Ready to <span class="highlight-cyan">Deploy?</span>
+                </h2>
+                <p class="launch-sub scroll-reveal" data-dir="up" data-delay="200">
+                    Launch the real-time recognition dashboard or power down the engine.
+                </p>
+
+                <!-- Countdown display -->
+                <div class="countdown-block scroll-reveal" data-dir="up" data-delay="300">
+                    <span class="t-label">T —</span>
+                    <span class="t-num" id="countdownTimer">10</span>
+                    <div class="t-prog-wrap">
+                        <div class="t-prog-fill" id="countdownProg"></div>
+                    </div>
+                    <span class="t-status" id="countdownStatus">AWAITING LAUNCH SEQUENCE</span>
+                </div>
+
+                <!-- Buttons -->
+                <div class="launch-btns scroll-reveal" data-dir="up" data-delay="400">
+                    <a href="/dashboard" id="btnLaunch" class="btn-launch">
+                        <div class="btn-glow-bg"></div>
+                        <i class="fa-solid fa-rocket"></i>
+                        <span id="launchBtnText">INITIALIZE SYSTEM</span>
+                        <i class="fa-solid fa-arrow-right btn-arrow"></i>
+                    </a>
+
+                    <button id="btnQuit" class="btn-quit">
+                        <div class="btn-glow-red"></div>
+                        <i class="fa-solid fa-power-off"></i>
+                        <span id="quitBtnText">POWER OFF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Decorative corner text -->
+            <div class="launch-team">
+                Daksh · Aayush · Athrva · Zaid &nbsp;|&nbsp; CORE AI v2.0
+            </div>
+        </section>
+
+    </div><!-- end scroll-wrapper -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+</body>
+</html>
